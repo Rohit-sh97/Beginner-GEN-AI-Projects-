@@ -1,6 +1,7 @@
 
 import pymupdf
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from app.text_splitter import split_text
 
 router = APIRouter()
 
@@ -35,9 +36,13 @@ async def upload_document(file: UploadFile = File(...)):
             detail="No readable text found in the document"
         )
 
+    chunks = split_text(text)
+
     return {
         "filename": filename,
         "text": text,
         "characters": len(text),
-        "message": "Document read successfully"
+        "message": "Document read successfully",
+        "chunk_count": len(chunks),
+        "chunks": chunks
     }
