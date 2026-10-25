@@ -1,0 +1,24 @@
+
+fastapi
+uvicorn
+python-dotenv
+pydantic
+httpx
+
+# Document processing
+pypdf
+python-multipart
+
+# LangChain and RAG
+langchain-core
+langchain-groq
+langchain-text-splitters
+langchain-chroma
+langchain-huggingface
+
+# Embeddings and vector database
+sentence-transformers
+chromadb
+
+# Testing
+pytest
