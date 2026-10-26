@@ -31,8 +31,10 @@ def build_bm25_retriever(documents: list[Document]):
     bm25_retriever.k = 4
 
 
-def retrieve_bm25(question: str) -> list[Document]:
+def retrieve_bm25(question: str, k: int = 4) -> list[Document]:
     if bm25_retriever is None:
         return []
 
+    # Fetch extra candidates so duplicates can be removed.
+    bm25_retriever.k = k
     return bm25_retriever.invoke(question)

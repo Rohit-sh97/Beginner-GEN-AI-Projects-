@@ -1,7 +1,7 @@
 
 from langchain_core.documents import Document
 from app.reranker import rerank_documents
-from app.rag import retrieve_documents, retrieve_bm25_documents
+from app.rag import retrieve_documents, retrieve_bm25_documents, deduplicate_documents
 
 
 def reciprocal_rank_fusion(
@@ -39,24 +39,22 @@ def reciprocal_rank_fusion(
 
 
 
-def retrieve_hybrid(
-    question: str,
-    k: int = 4,
-) -> list[Document]:
-    """Retrieve candidates, combine rankings, then rerank."""
 
-    # Retrieve more candidates than we ultimately return.
+def retrieve_hybrid(question: str, k: int = 4) -> list[Document]:
+    """Retrieve, fuse, deduplicate, and rerank relevant pages."""
+
     vector_results = retrieve_documents(question, k=10)
     bm25_results = retrieve_bm25_documents(question, k=10)
 
-    # Combine vector and keyword rankings.
     candidates = reciprocal_rank_fusion(
         vector_results=vector_results,
         bm25_results=bm25_results,
-        top_n=10,
+        top_n=20,
     )
 
-    # Rerank candidates by relevance to the question.
+    # Keep one candidate per source page before reranking.
+    candidates = deduplicate_documents(candidates)
+
     return rerank_documents(
         question=question,
         documents=candidates,

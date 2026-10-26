@@ -5,7 +5,7 @@ from app.rag import ingest_document, retrieve_documents
 from app.hybrid_retriever import retrieve_hybrid
 from app.chains import research_documents
 from app.schemas import ResearchRequest, ResearchResponse
-
+from app.evaluate import run_evaluation
 
 app = FastAPI(
     title="AI Research Assistant",
@@ -140,3 +140,16 @@ def retrieval_comparison(question: str):
             status_code=500,
             detail="Retrieval comparison failed. Check server logs.",
         ) from exc
+
+
+
+@app.get("/debug/evaluate-retrieval")
+def evaluate_retrieval():
+    try:
+        return run_evaluation()
+    except Exception as e:
+        print(f"Evaluation error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Retrieval evaluation failed. Check the server terminal.",
+        )

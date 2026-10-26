@@ -30,6 +30,28 @@ vector_store = Chroma(
     persist_directory=str(CHROMA_DIR),
 )
 
+
+
+def deduplicate_documents(documents: list[Document]) -> list[Document]:
+    """Keep only the highest-ranked chunk from each source page."""
+    unique_documents = []
+    seen_pages = set()
+
+    for doc in documents:
+        key = (
+            doc.metadata.get("source", "Unknown"),
+            doc.metadata.get("page"),
+        )
+
+        if key in seen_pages:
+            continue
+
+        seen_pages.add(key)
+        unique_documents.append(doc)
+
+    return unique_documents
+
+
 def ingest_document(filename: str, file_bytes: bytes) -> int:
     """Extract, split, and store one PDF or TXT document."""
 
@@ -104,13 +126,29 @@ def retrieve_documents(question: str, k: int = 4):
         query=question,
         k=k,
     )
+    
+def retrieve_documents(question: str, k: int = 4) -> list[Document]:
+    # Fetch extra candidates so deduplication can still return k results.
+    candidates = vector_store.similarity_search(
+        query=question,
+        k=k * 3,
+    )
+
+    unique_documents = deduplicate_documents(candidates)
+    return unique_documents[:k]
 
 
-def retrieve_bm25_documents(question: str, k: int = 4):
-    """Retrieve relevant chunks using BM25 keyword search."""
-    results = retrieve_bm25(question)
-    return results[:k]
 
+def retrieve_bm25_documents(
+    question: str,
+    k: int = 4,
+) -> list[Document]:
+    # Retrieve extra candidates before removing duplicates.
+    candidates = retrieve_bm25(question, k=k * 3)
+
+    unique_documents = deduplicate_documents(candidates)
+
+    return unique_documents[:k]
 
 def rebuild_bm25_from_chroma():
     stored_data = vector_store.get(
